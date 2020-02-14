@@ -1,9 +1,12 @@
     // Import external libraries
 #include <Adafruit_ssd1306syp.h>
 #include "SoftwareSerial.h"
-#include "WString.h"
+//#include "WString.h"
+#include <Servo.h>
 
 // Constants: I/O Pins
+#define PIN_BLUETOOTH_RECV 2
+#define PIN_BLUETOOTH_SEND 3
 #define PIN_MOTOR_A_ENABLE 5
 #define PIN_MOTOR_B_ENABLE 6
 #define PIN_MOTOR_A_INPUT1 7
@@ -13,6 +16,7 @@
 #define PIN_LED            10
 #define PIN_I2C_SDA        A4
 #define PIN_I2C_SCL        A5
+#define PIN_SERVO          9
 
 // More Constants
 #define AUTO_SHUTOFF_TIME 30000
@@ -40,11 +44,15 @@ Adafruit_ssd1306syp display(PIN_I2C_SDA, PIN_I2C_SCL);
 int velocity = 100;  
 
 // Global Variables: Bluetooth command Queue
-SoftwareSerial bluetooth(2, 3);
+SoftwareSerial bluetooth(PIN_BLUETOOTH_RECV, PIN_BLUETOOTH_SEND);
 BluetoothState bluetoothState = BLUETOOTH_DISCONNECTED;
 char command = 'S';
 char prevCommand = 'A';
 unsigned long timeLastCommand = 0;  //Stores the time when the last command was received from the phone
+
+// Global Variables: Servo Weapon
+Servo servoMotor; 
+float servoPos = 0.0; 
 
 /*** DISPLAY ***/
 
@@ -57,7 +65,7 @@ void displayStatus(String line1, String line2, String line3, String line4) {
   display.setTextSize(1);
   display.setTextColor(WHITE);
 
-  display.setCursor(0,0);
+  display.setCursor(0,2);
   display.println(line1);
 
   // Fun little animation to prove that we are not locked up.
@@ -145,6 +153,11 @@ void setup() {
   delay(1000);
   display.initialize();
 
+  // Servo eapon
+  servoMotor.attach(PIN_SERVO); 
+  servoPos = 0.0;
+  servoMotor.write(0.0);
+
   // Init the rest of our internal state.
   dead = false;
   Serial.println("setup end");
@@ -161,6 +174,16 @@ void loop() {
     displayMessage("DEAD", "Deactivated due to auto-shutoff");
     return;
   }
+
+  /*for (servoPos = 0; servoPos <= 180; servoPos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    servoMotor.write(servoPos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  }
+  for (servoPos = 180; servoPos >= 0; servoPos -= 1) { // goes from 180 degrees to 0 degrees
+    servoMotor.write(servoPos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  } */
   
   // Process the bluetooth command queue, which is all the commands from our remote control.
   bluetoothProcess();
@@ -340,9 +363,11 @@ void bluetoothProcess() {
       break;
     case 'U':  //Back ON
       //digitalWrite(pinbackLights, HIGH);
+      servoMotor.write(180.0);  
       break;
     case 'u':  //Back OFF
       //digitalWrite(pinbackLights, LOW);
+      servoMotor.write(0.0);  
       break;
     case 'D':  //Everything OFF
       digitalWrite(PIN_LED, LOW);
