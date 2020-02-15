@@ -1,5 +1,4 @@
-//  Sketc: basicSerialWithNL_001
-// 
+
 //  Uses hardware serial to talk to the host computer and software serial 
 //  for communication with the Bluetooth module
 //  Intended for Bluetooth devices that require line end characters "\r\n"
@@ -16,7 +15,11 @@
  
  
 #include <SoftwareSerial.h>
-SoftwareSerial BTserial(2, 3); // RX | TX
+
+#define PIN_BLUETOOTH_RECV 2
+#define PIN_BLUETOOTH_SEND 3
+
+SoftwareSerial BTserial(PIN_BLUETOOTH_RECV, PIN_BLUETOOTH_SEND); // RX | TX
  
 const long baudRate = 38400; 
 char c=' ';
@@ -36,14 +39,12 @@ void setup()
  
 void loop()
 {
- 
     // Read from the Bluetooth module and send to the Arduino Serial Monitor
     if (BTserial.available())
     {
         c = BTserial.read();
         Serial.write(c);
     }
- 
  
     // Read from the Serial Monitor and send to the Bluetooth module
     if (Serial.available())
@@ -56,5 +57,4 @@ void loop()
         Serial.write(c);
         if (c==10) { NL = true; }
     }
- 
 }
